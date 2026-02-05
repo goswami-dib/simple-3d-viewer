@@ -1,0 +1,6 @@
+{
+  "name": "fbx-viewer",
+  "version": "1.0.0",
+  "description": "Simple web-based FBX file viewer",
+  "private": true
+}

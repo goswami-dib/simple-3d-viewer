@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FBX Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1>FBX Viewer</h1>
+      <div class="controls">
+        <label class="file-label">
+          <input type="file" id="file-input" accept=".fbx" hidden>
+          <span class="btn btn-primary">Open FBX</span>
+        </label>
+        <p class="hint">or drag & drop an .fbx file</p>
+      </div>
+    </header>
+    <main class="viewport-wrapper">
+      <canvas id="canvas"></canvas>
+      <div id="drop-overlay" class="drop-overlay">
+        <span>Drop FBX file here</span>
+      </div>
+      <div id="loading" class="loading hidden">Loading…</div>
+      <div id="error" class="error hidden"></div>
+    </main>
+    <footer class="footer">
+      <span id="status">No model loaded</span>
+    </footer>
+  </div>
+  <script type="module" src="viewer.js"></script>
+</body>
+</html>
