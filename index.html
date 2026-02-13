@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FBX Viewer</title>
+  <title>Geo Viewer — FBX / GLB / GLTF</title>
   <link rel="stylesheet" href="styles.css">
   <script type="importmap">
   {
@@ -17,19 +17,49 @@
 <body>
   <div id="app">
     <header class="header">
-      <h1>FBX Viewer</h1>
+      <h1>Geo Viewer</h1>
       <div class="controls">
         <label class="file-label">
-          <input type="file" id="file-input" accept=".fbx,.jpg,.jpeg,.png,.tga,.bmp,.tif,.tiff" multiple hidden>
-          <span class="btn btn-primary">Open FBX (+ textures)</span>
+          <input type="file" id="file-input" accept=".fbx,.glb,.gltf,.jpg,.jpeg,.png,.tga,.bmp,.tif,.tiff" multiple hidden>
+          <span class="btn btn-primary">Open model (+ textures)</span>
         </label>
-        <p class="hint">Select FBX and companion textures (e.g. .jpg), or drag & drop</p>
+        <label class="geo-toggle">
+          <input type="checkbox" id="geo-mode" checked>
+          <span>WGS84 → local</span>
+        </label>
+        <label class="geo-toggle" title="Flip geo model vertically (use if model loads upside down)">
+          <input type="checkbox" id="flip-vertical">
+          <span>Flip vertical (geo)</span>
+        </label>
+        <label class="axis-label">
+          Axes:
+          <select id="axis-mapping" title="Which model axis is longitude, latitude, height">
+            <option value="0,1,2">X=lon, Y=lat, Z=height</option>
+            <option value="0,2,1">X=lon, Z=lat, Y=height</option>
+            <option value="1,0,2" selected>Y=lon, X=lat, Z=height</option>
+            <option value="1,2,0">Y=lon, Z=lat, X=height</option>
+            <option value="2,0,1">Z=lon, X=lat, Y=height</option>
+            <option value="2,1,0">Z=lon, Y=lat, X=height</option>
+          </select>
+        </label>
+        <label class="axis-label" title="Scale height (Z) so elevation is visible relative to horizontal extent">
+          Z scale:
+          <input type="number" id="vertical-exaggeration" min="0.1" max="500" step="1" value="10">
+          <button type="button" id="apply-z-scale" class="btn btn-apply">Apply</button>
+        </label>
+        <label class="geo-toggle" title="Check so increasing Z scale makes buildings grow taller instead of sink deeper (Metashape FBX)">
+          <input type="checkbox" id="flip-z-scale" checked>
+          <span>Z scale: taller</span>
+        </label>
+        <button type="button" id="reset-view" class="btn btn-apply" title="Reset camera to centered view">Reset view</button>
+        <p class="hint">FBX, GLB, GLTF with WGS84. Z scale exaggerates height so the model isn’t flat.</p>
       </div>
     </header>
     <main class="viewport-wrapper">
       <canvas id="canvas"></canvas>
+      <div id="map-container" class="map-container" title="Model extent (WGS84)"></div>
       <div id="drop-overlay" class="drop-overlay">
-        <span>Drop FBX + texture files here</span>
+        <span>Drop model + textures here</span>
       </div>
       <div id="loading" class="loading hidden">Loading…</div>
       <div id="error" class="error hidden"></div>

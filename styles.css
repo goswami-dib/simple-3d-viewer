@@ -39,7 +39,53 @@ body {
 .controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.geo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  color: #a1a1aa;
+}
+
+.geo-toggle input {
+  accent-color: #6366f1;
+}
+
+.axis-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  color: #a1a1aa;
+}
+
+.axis-label select,
+.axis-label input[type="number"] {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #3f3f46;
+  background: #18181b;
+  color: #e2e2e6;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.axis-label input[type="number"] {
+  width: 4ch;
+  cursor: text;
+}
+
+#vertical-exaggeration {
+  width: 6ch;
+  min-width: 5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
 }
 
 .file-label {
@@ -64,6 +110,16 @@ body {
   background: #4f46e5;
 }
 
+.btn-apply {
+  background: #3f3f46;
+  color: #e2e2e6;
+  margin-left: 0.25rem;
+}
+
+.btn-apply:hover {
+  background: #52525b;
+}
+
 .hint {
   margin: 0;
   font-size: 0.75rem;
@@ -82,6 +138,20 @@ body {
   height: 100%;
   min-height: 400px;
   background: #18181b;
+}
+
+.map-container {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  width: 240px;
+  height: 160px;
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+  overflow: hidden;
+  background: #27272a;
 }
 
 .drop-overlay {

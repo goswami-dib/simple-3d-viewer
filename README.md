@@ -1,58 +1,55 @@
-# FBX Viewer
+# Geo Viewer — FBX / GLB / GLTF
 
-A simple web-based FBX file viewer built with Three.js. Load `.fbx` models via file picker or drag & drop, then orbit, pan, and zoom with the mouse.
+A web-based **geo viewer** for 3D models with **WGS84 (lat/lon)** coordinates. Load FBX, GLB, or GLTF (e.g. from Agisoft Metashape or other geospatial tools); the viewer projects coordinates to a local tangent plane so the model displays correctly instead of as a distorted line.
 
 ## Run locally
 
-Serve the project over HTTP (required for module loading). From the project directory:
+Serve over HTTP (required for modules). From the project directory:
 
-**Using Python (no Node.js needed):**
+**Python (no Node.js needed):**
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open [http://localhost:8000](http://localhost:8000) in your browser.
+Then open [http://localhost:8000](http://localhost:8000).
 
-**Alternatively**, if you have Node.js: `npx serve .` then open http://localhost:3000.
+**Alternatively:** `npx serve .` then http://localhost:3000.
 
 ## Usage
 
-- **Open FBX** — Click “Open FBX (+ textures)” and choose your `.fbx` file plus any companion textures (e.g. `.jpg`) in the same folder. Select multiple files (Shift/Cmd+click) so the loader can find textures referenced by the FBX.
-- **Drag & drop** — Drop the `.fbx` and its texture file(s) onto the page together.
-- **Orbit** — Left-drag to rotate the camera.
-- **Pan** — Right-drag (or two-finger drag) to pan.
-- **Zoom** — Scroll to zoom in/out.
+- **Open model** — Click “Open model (+ textures)” and select a **.fbx**, **.glb**, or **.gltf** file, plus any companion textures (e.g. .jpg). You can select multiple files (Shift/Cmd+click).
+- **Drag & drop** — Drop the model file and its texture file(s) onto the page.
+- **WGS84 → local** — With “WGS84 → local” checked (default), vertex coordinates are treated as longitude, latitude, and height (degrees / meters) and projected to a local East–North–Up (ENU) frame so the model appears at the correct scale and shape.
+- **Axis mapping** — If the model doesn’t look right, use the **Axes** dropdown. It defines which model axis is longitude, which is latitude, and which is height (e.g. “X=lon, Y=lat, Z=height” for Metashape-style exports).
+- **Map** — A small map in the bottom-right shows the model’s geographic extent (after a WGS84 model is loaded).
+- **Orbit / Pan / Zoom** — Left-drag to rotate, right-drag to pan, scroll to zoom.
+
+## Supported formats
+
+- **FBX** — With optional companion textures (.jpg, .png, etc.). Geometry is assumed to be in WGS84 when “WGS84 → local” is on.
+- **GLB / GLTF** — Same geo projection; useful for glTF/glb exports from geospatial pipelines.
 
 ## Requirements
 
-- Modern browser with WebGL support.
-- FBX files: ASCII FBX 7.0+ or Binary FBX 6400+ (as supported by Three.js FBXLoader).
+- Modern browser with WebGL.
+- FBX: ASCII 7.0+ or Binary 6400+ (Three.js FBXLoader).
+- Models in **WGS84**: longitude and latitude in degrees, height in meters (or same units). Axis order depends on the export; use the axis dropdown if the result looks wrong.
 
 ## Tech
 
-- [Three.js](https://threejs.org/) (r160) — 3D rendering
-- FBXLoader — load FBX models
-- OrbitControls — camera interaction
+- [Three.js](https://threejs.org/) — 3D rendering, FBXLoader, GLTFLoader
+- OrbitControls — camera
+- [Leaflet](https://leafletjs.com/) — small map for model extent (loaded from CDN)
 
-No build step; uses ES modules and CDN for Three.js.
+No build step; ES modules + CDN.
 
-## Seeing error logs
+## Error logs
 
-If a model fails to load, the status bar shows **Load failed:** plus the error message. To see full details and stack traces:
-
-1. **Open Developer Tools**  
-   - **macOS:** `Cmd + Option + J` (Chrome/Edge) or `Cmd + Option + I` then open the **Console** tab (Safari).  
-   - **Windows/Linux:** `F12` or `Ctrl + Shift + J`, then the **Console** tab.
-
-2. **Reload the page**, then try loading your FBX again.
-
-3. In the **Console**, look for lines starting with `[FBX Viewer]` and any red error messages. Those contain the exact error and stack trace.
-
-Common causes of load failure: unsupported FBX version, binary vs ASCII format issues, or corrupt/incomplete files. The console message will usually indicate the reason.
+Open Developer Tools → **Console** (e.g. `Cmd + Option + J` on macOS). Messages prefixed with `[Geo Viewer]` show load and projection details. On load failure, the status bar shows “Load failed:” plus the error.
 
 ## Agisoft Metashape
 
-Models exported from **Agisoft Metashape** work best when exported in **local** or **projected** coordinates (e.g. UTM), not in geographic (WGS84) coordinates. Exporting in lat/lon can produce a distorted “thin line” of vertices because degrees are not uniform in scale. In Metashape, use **File → Export → Export Model**, choose FBX, and under **Coordinate system** pick a local or projected system (e.g. “Local Coordinates” or a UTM zone) rather than WGS84.
-
-If you see “Bounding box degenerate” or “Model very large” in the console, the FBX is likely in geographic coordinates; re-export with a local/projected coordinate system. Texture paths are logged in the console (`[FBX Viewer] Texture resolved:` / `Texture not in selection`) so you can confirm which image files the viewer is using.
+- Export the model in **WGS84** (lat/lon) if you want to use “WGS84 → local” in this viewer.
+- If the model appears as a thin line or wrong shape, try another **Axes** option (e.g. “X=lon, Z=lat, Y=height” or “Z=lon, Y=lat, X=height”) to match how Metashape wrote the axes.
+- Include the exported texture files in the same selection (or drop) so textures load.
