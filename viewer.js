@@ -83,30 +83,43 @@ function centerAndScale(model) {
   const box = new THREE.Box3().setFromObject(model);
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z);
-  const scale = maxDim > 0 ? 2 / maxDim : 1;
+  let maxDim = Math.max(size.x, size.y, size.z);
+
+  if (!Number.isFinite(maxDim) || maxDim <= 0) {
+    maxDim = 1;
+    console.warn("[FBX Viewer] Bounding box degenerate or invalid (e.g. geo coords?). Using default scale.");
+  }
+  if (maxDim > 1e10) {
+    console.warn("[FBX Viewer] Model very large (e.g. geographic coordinates?). Scaling down.");
+  }
+  const scale = 2 / maxDim;
 
   model.position.sub(center);
   model.scale.multiplyScalar(scale);
 }
 
 function buildTextureMap(files) {
-  const imageExt = /\.(jpg|jpeg|png|tga|bmp)$/i;
+  const imageExt = /\.(jpg|jpeg|png|tga|bmp|tif|tiff)$/i;
   const map = new Map();
+  const byBaseName = new Map();
   for (const file of files) {
     if (!imageExt.test(file.name)) continue;
     const url = URL.createObjectURL(file);
     textureBlobUrls.push(url);
-    map.set(file.name, url);
-    map.set(file.name.toLowerCase(), url);
-    const base = file.name.replace(/\.[^.]+$/i, "");
-    const ext = (file.name.match(/\.[^.]+$/i) || [""])[0];
+    const name = file.name;
+    const base = name.replace(/\.[^.]+$/i, "");
+    map.set(name, url);
+    map.set(name.toLowerCase(), url);
+    byBaseName.set(base.toLowerCase(), url);
+    byBaseName.set(base.replace(/_/g, "-").toLowerCase(), url);
+    byBaseName.set(base.replace(/-/g, "_").toLowerCase(), url);
+    const ext = (name.match(/\.[^.]+$/i) || [""])[0];
     const altBase = base.replace(/_/g, "-");
     if (altBase !== base) map.set(altBase + ext, url);
     const altBase2 = base.replace(/-/g, "_");
     if (altBase2 !== base) map.set(altBase2 + ext, url);
   }
-  return map;
+  return { map, byBaseName };
 }
 
 const PLACEHOLDER_TEXTURE =
@@ -115,19 +128,32 @@ const PLACEHOLDER_TEXTURE =
     '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#888"/></svg>'
   );
 
-function createLoaderWithTextureMap(textureMap) {
+function createLoaderWithTextureMap(textureMapOrPair) {
+  const textureMap = textureMapOrPair?.map ?? textureMapOrPair ?? new Map();
+  const byBaseName = textureMapOrPair?.byBaseName ?? new Map();
   const manager = new THREE.LoadingManager();
   const originalResolve = manager.resolveURL.bind(manager);
   manager.resolveURL = function (url) {
+    const raw = url;
     const name = url.split(/[/\\]/).pop();
-    if (textureMap.has(name)) return textureMap.get(name);
-    const lower = name.toLowerCase();
-    if (textureMap.has(lower)) return textureMap.get(lower);
-    const underscore = name.replace(/-/g, "_");
-    if (textureMap.has(underscore)) return textureMap.get(underscore);
-    const hyphen = name.replace(/_/g, "-");
-    if (textureMap.has(hyphen)) return textureMap.get(hyphen);
-    if (/\.(jpg|jpeg|png|tga|bmp)$/i.test(name)) {
+    let resolved = null;
+    if (textureMap.has(name)) resolved = textureMap.get(name);
+    else if (textureMap.has(name.toLowerCase())) resolved = textureMap.get(name.toLowerCase());
+    else if (textureMap.has((name.replace(/-/g, "_")))) resolved = textureMap.get(name.replace(/-/g, "_"));
+    else if (textureMap.has(name.replace(/_/g, "-"))) resolved = textureMap.get(name.replace(/_/g, "-"));
+    else {
+      const base = name.replace(/\.[^.]+$/i, "").toLowerCase();
+      const baseNorm = base.replace(/-/g, "_");
+      if (byBaseName.has(base)) resolved = byBaseName.get(base);
+      else if (byBaseName.has(baseNorm)) resolved = byBaseName.get(baseNorm);
+      else if (byBaseName.has(base.replace(/_/g, "-"))) resolved = byBaseName.get(base.replace(/_/g, "-"));
+    }
+    if (resolved) {
+      console.log("[FBX Viewer] Texture resolved:", raw, "-> (selected file)");
+      return resolved;
+    }
+    if (/\.(jpg|jpeg|png|tga|bmp|tif|tiff)$/i.test(name)) {
+      console.log("[FBX Viewer] Texture not in selection, using placeholder:", raw);
       return PLACEHOLDER_TEXTURE;
     }
     return originalResolve(url);

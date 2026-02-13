@@ -50,3 +50,9 @@ If a model fails to load, the status bar shows **Load failed:** plus the error m
 3. In the **Console**, look for lines starting with `[FBX Viewer]` and any red error messages. Those contain the exact error and stack trace.
 
 Common causes of load failure: unsupported FBX version, binary vs ASCII format issues, or corrupt/incomplete files. The console message will usually indicate the reason.
+
+## Agisoft Metashape
+
+Models exported from **Agisoft Metashape** work best when exported in **local** or **projected** coordinates (e.g. UTM), not in geographic (WGS84) coordinates. Exporting in lat/lon can produce a distorted “thin line” of vertices because degrees are not uniform in scale. In Metashape, use **File → Export → Export Model**, choose FBX, and under **Coordinate system** pick a local or projected system (e.g. “Local Coordinates” or a UTM zone) rather than WGS84.
+
+If you see “Bounding box degenerate” or “Model very large” in the console, the FBX is likely in geographic coordinates; re-export with a local/projected coordinate system. Texture paths are logged in the console (`[FBX Viewer] Texture resolved:` / `Texture not in selection`) so you can confirm which image files the viewer is using.
