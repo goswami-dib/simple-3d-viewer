@@ -20,16 +20,16 @@
       <h1>FBX Viewer</h1>
       <div class="controls">
         <label class="file-label">
-          <input type="file" id="file-input" accept=".fbx" hidden>
-          <span class="btn btn-primary">Open FBX</span>
+          <input type="file" id="file-input" accept=".fbx,.jpg,.jpeg,.png,.tga,.bmp" multiple hidden>
+          <span class="btn btn-primary">Open FBX (+ textures)</span>
         </label>
-        <p class="hint">or drag & drop an .fbx file</p>
+        <p class="hint">Select FBX and companion textures (e.g. .jpg), or drag & drop</p>
       </div>
     </header>
     <main class="viewport-wrapper">
       <canvas id="canvas"></canvas>
       <div id="drop-overlay" class="drop-overlay">
-        <span>Drop FBX file here</span>
+        <span>Drop FBX + texture files here</span>
       </div>
       <div id="loading" class="loading hidden">Loading…</div>
       <div id="error" class="error hidden"></div>

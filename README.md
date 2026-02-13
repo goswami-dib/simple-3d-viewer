@@ -18,8 +18,8 @@ Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
 ## Usage
 
-- **Open FBX** — Click the button and choose an `.fbx` file.
-- **Drag & drop** — Drop an `.fbx` file onto the page.
+- **Open FBX** — Click “Open FBX (+ textures)” and choose your `.fbx` file plus any companion textures (e.g. `.jpg`) in the same folder. Select multiple files (Shift/Cmd+click) so the loader can find textures referenced by the FBX.
+- **Drag & drop** — Drop the `.fbx` and its texture file(s) onto the page together.
 - **Orbit** — Left-drag to rotate the camera.
 - **Pan** — Right-drag (or two-finger drag) to pan.
 - **Zoom** — Scroll to zoom in/out.

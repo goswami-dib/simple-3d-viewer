@@ -10,7 +10,7 @@ const errorEl = document.getElementById("error");
 const statusEl = document.getElementById("status");
 
 let scene, camera, renderer, controls, currentModel;
-const loader = new FBXLoader();
+let textureBlobUrls = [];
 
 function init() {
   scene = new THREE.Scene();
@@ -90,13 +90,60 @@ function centerAndScale(model) {
   model.scale.multiplyScalar(scale);
 }
 
-async function loadFBX(urlOrBlob) {
+function buildTextureMap(files) {
+  const imageExt = /\.(jpg|jpeg|png|tga|bmp)$/i;
+  const map = new Map();
+  for (const file of files) {
+    if (!imageExt.test(file.name)) continue;
+    const url = URL.createObjectURL(file);
+    textureBlobUrls.push(url);
+    map.set(file.name, url);
+    map.set(file.name.toLowerCase(), url);
+    const base = file.name.replace(/\.[^.]+$/i, "");
+    const ext = (file.name.match(/\.[^.]+$/i) || [""])[0];
+    const altBase = base.replace(/_/g, "-");
+    if (altBase !== base) map.set(altBase + ext, url);
+    const altBase2 = base.replace(/-/g, "_");
+    if (altBase2 !== base) map.set(altBase2 + ext, url);
+  }
+  return map;
+}
+
+const PLACEHOLDER_TEXTURE =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#888"/></svg>'
+  );
+
+function createLoaderWithTextureMap(textureMap) {
+  const manager = new THREE.LoadingManager();
+  const originalResolve = manager.resolveURL.bind(manager);
+  manager.resolveURL = function (url) {
+    const name = url.split(/[/\\]/).pop();
+    if (textureMap.has(name)) return textureMap.get(name);
+    const lower = name.toLowerCase();
+    if (textureMap.has(lower)) return textureMap.get(lower);
+    const underscore = name.replace(/-/g, "_");
+    if (textureMap.has(underscore)) return textureMap.get(underscore);
+    const hyphen = name.replace(/_/g, "-");
+    if (textureMap.has(hyphen)) return textureMap.get(hyphen);
+    if (/\.(jpg|jpeg|png|tga|bmp)$/i.test(name)) {
+      return PLACEHOLDER_TEXTURE;
+    }
+    return originalResolve(url);
+  };
+  return new FBXLoader(manager);
+}
+
+async function loadFBX(fbxUrl, textureMap = new Map()) {
   showLoading(true);
   showError(null);
   setStatus("Loading…");
 
+  const loader = createLoaderWithTextureMap(textureMap);
+
   try {
-    const object = await loader.loadAsync(urlOrBlob);
+    const object = await loader.loadAsync(fbxUrl);
 
     if (currentModel) {
       scene.remove(currentModel);
@@ -129,12 +176,28 @@ async function loadFBX(urlOrBlob) {
   }
 }
 
+function getFbxAndTextures(files) {
+  const list = Array.from(files || []);
+  const fbx = list.find((f) => /\.fbx$/i.test(f.name));
+  const textures = list.filter((f) => f !== fbx);
+  return { fbx, textureFiles: textures };
+}
+
 function onFileSelected(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  console.log("[FBX Viewer] Opening file:", file.name, file.size, "bytes");
-  const url = URL.createObjectURL(file);
-  loadFBX(url).finally(() => URL.revokeObjectURL(url));
+  const files = e.target.files;
+  if (!files?.length) return;
+  for (const url of textureBlobUrls) URL.revokeObjectURL(url);
+  textureBlobUrls = [];
+  const { fbx, textureFiles } = getFbxAndTextures(files);
+  if (!fbx) {
+    showError("No .fbx file in selection");
+    fileInput.value = "";
+    return;
+  }
+  console.log("[FBX Viewer] Opening:", fbx.name, "+", textureFiles.length, "texture(s)");
+  const fbxUrl = URL.createObjectURL(fbx);
+  const textureMap = buildTextureMap(textureFiles);
+  loadFBX(fbxUrl, textureMap).finally(() => URL.revokeObjectURL(fbxUrl));
   fileInput.value = "";
 }
 
@@ -155,14 +218,19 @@ function setupDropZone() {
     e.preventDefault();
     e.stopPropagation();
     dropOverlay.classList.remove("active");
-    const file = e.dataTransfer?.files?.[0];
-    if (file && file.name.toLowerCase().endsWith(".fbx")) {
-      console.log("[FBX Viewer] Dropped file:", file.name, file.size, "bytes");
-      const url = URL.createObjectURL(file);
-      loadFBX(url).finally(() => URL.revokeObjectURL(url));
-    } else {
-      showError("Please drop an .fbx file");
+    const files = e.dataTransfer?.files;
+    if (!files?.length) return;
+    for (const url of textureBlobUrls) URL.revokeObjectURL(url);
+    textureBlobUrls = [];
+    const { fbx, textureFiles } = getFbxAndTextures(files);
+    if (!fbx) {
+      showError("No .fbx file in drop");
+      return;
     }
+    console.log("[FBX Viewer] Dropped:", fbx.name, "+", textureFiles.length, "texture(s)");
+    const fbxUrl = URL.createObjectURL(fbx);
+    const textureMap = buildTextureMap(textureFiles);
+    loadFBX(fbxUrl, textureMap).finally(() => URL.revokeObjectURL(fbxUrl));
   };
 
   document.body.addEventListener("dragover", onDrag);
